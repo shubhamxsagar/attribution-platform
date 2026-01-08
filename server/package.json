@@ -10,25 +10,29 @@
     "prisma:push": "prisma db push"
   },
   "dependencies": {
-    "express": "^4.18.2",          
+    "@prisma/client": "^5.0.0",
+    "body-parser": "^1.20.4",
+    "bullmq": "^4.0.0",
     "cors": "^2.8.5",
-    "body-parser": "^1.20.2",
-    "prisma": "^5.0.0",             
-    "@prisma/client": "^5.0.0",     
-    "bullmq": "^4.0.0",             
+    "dotenv": "^17.2.3",
+    "express": "^4.22.1",
     "ioredis": "^5.3.0",
-    "request-ip": "^3.3.0",         
-    "useragent": "^2.3.0",          
+    "mongoose": "^8.21.0",
+    "prisma": "^5.0.0",
+    "request-ip": "^3.3.0",
+    "useragent": "^2.3.0",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
-    "ts-node-dev": "^2.0.0",
-    "@types/express": "^4.17.17",
-    "@types/node": "^20.0.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^4.17.25",
+    "@types/node": "^20.19.27",
     "@types/request-ip": "^0.0.37",
-    "@types/useragent": "^2.3.0",
-    "@types/cors": "^2.8.13",
-    "@types/uuid": "^9.0.0"
+    "@types/useragent": "^2.3.4",
+    "@types/uuid": "^9.0.0",
+    "nodemon": "^3.1.11",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3"
   }
 }
