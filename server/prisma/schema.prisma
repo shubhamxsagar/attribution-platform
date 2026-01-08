@@ -1,0 +1,38 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+// 1. Stores Web Clicks
+model Click {
+  clickId     String   @id // UUID passed in URL
+  campaign    String?
+  source      String?
+  ip          String   // Vital for fingerprinting
+  ua          String   // Vital for fingerprinting
+  deviceModel String?
+  createdAt   DateTime @default(now())
+}
+
+// 2. Stores App Installs
+model Install {
+  installId       String   @id
+  ip              String
+  ua              String
+  deviceModel     String?
+  referrer        String?
+  
+  // NEW FIELDS
+  clickTimestamp        BigInt? // Store as BigInt for safety
+  installBeginTimestamp BigInt?
+  isInstantApp          Boolean @default(false)
+  
+  attributedTo    String?
+  attributionType String?
+  createdAt       DateTime @default(now())
+}

@@ -1,0 +1,31 @@
+version: '3.8'
+services:
+  # 1. THE DATABASE
+  postgres:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: admin        # <--- YOU WERE MISSING THIS LINE
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: attribution_db
+    ports:
+      - "5432:5432"
+
+  # 2. THE QUEUE (REDIS)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  # 3. YOUR BACKEND SERVER
+  server:
+    build: ./server
+    ports:
+      - "4000:4000"
+    environment:
+      # This url is for the container to talk to the DB
+      DATABASE_URL: "postgresql://admin:password@postgres:5432/attribution_db?schema=public"
+      REDIS_HOST: "redis" 
+    depends_on:
+      - postgres
+      - redis
