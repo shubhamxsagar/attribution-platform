@@ -3,15 +3,19 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import { clickRoute } from './routes/click';
 import { installRoute } from './routes/install';
+// 1. Import the new route
+import { wellKnownRoute } from './routes/wellknown'; 
+import './workers/matchWorker';
 
 const app = express();
 
 app.use(cors());
 app.use(bodyParser.json());
 
-// Register Routes
-app.use(clickRoute);   // Handles web clicks
-app.use(installRoute); // Handles app installs
+// 2. Use the route
+app.use(wellKnownRoute); // <--- ADD THIS
+app.use(clickRoute);
+app.use(installRoute);
 
 const PORT = 4000;
 app.listen(PORT, '0.0.0.0', () => {

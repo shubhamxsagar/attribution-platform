@@ -52,7 +52,8 @@ new Worker('attribution-queue', async (job) => {
     await prisma.install.update({
       where: { installId },
       data: { 
-        attributedTo: bestMatch.campaign, 
+        attributedTo: bestMatch.campaign,
+        sourceId: bestMatch.sourceId,
         attributionType: 'probabilistic' 
       }
     });

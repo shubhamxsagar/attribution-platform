@@ -13,6 +13,7 @@ model Click {
   clickId     String   @id // UUID passed in URL
   campaign    String?
   source      String?
+  sourceId    String?
   ip          String   // Vital for fingerprinting
   ua          String   // Vital for fingerprinting
   deviceModel String?
@@ -31,7 +32,7 @@ model Install {
   clickTimestamp        BigInt? // Store as BigInt for safety
   installBeginTimestamp BigInt?
   isInstantApp          Boolean @default(false)
-  
+  sourceId    String?
   attributedTo    String?
   attributionType String?
   createdAt       DateTime @default(now())

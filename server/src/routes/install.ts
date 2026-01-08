@@ -25,14 +25,7 @@ installRoute.post('/api/install', async (req, res) => {
     } = req.body;
     const ip = requestIp.getClientIp(req) || '0.0.0.0';
 
-    let isFraud = false;
-    if (clickTimestamp > 0 && installBeginTimestamp > 0) {
-      const timeDiff = installBeginTimestamp - clickTimestamp;
-      if (timeDiff < 5) { // 5 seconds
-        console.log(`🚨 FRAUD DETECTED: Click Injection (TimeDiff: ${timeDiff}s)`);
-        isFraud = true;
-      }
-    }
+    console.log(`[INSTALL] Received installId: ${installId}, referrer: ${referrer} , isInstantApp: ${isInstantApp}, clickTimestamp: ${clickTimestamp}, installBeginTimestamp: ${installBeginTimestamp}`);
 
     // 2. Store the Install "Raw"
     await prisma.install.create({
@@ -47,13 +40,11 @@ installRoute.post('/api/install', async (req, res) => {
         installBeginTimestamp: installBeginTimestamp ? BigInt(installBeginTimestamp) : null,
         isInstantApp: isInstantApp,
         // If fraud, mark as 'blocked' immediately
-        attributionType: isFraud ? 'blocked_fraud' : 'pending'
       }
     });
 
-    if (!isFraud) {
-      await matchQueue.add('match-job', { installId });
-    }
+    await matchQueue.add('match-job', { installId });
+    
 
     console.log(`[INSTALL] Received ${installId}. Queueing for match...`);
 
