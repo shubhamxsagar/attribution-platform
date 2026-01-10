@@ -8,24 +8,19 @@ export const installRoute = Router();
 installRoute.post('/api/install', async (req, res) => {
   try {
     const { 
-      installId, referrer, deviceModel, ua, 
+      installId, 
+      referrer, 
+      deviceModel, 
+      ua, 
+      gaid, idfv, androidId,
+      osVersion, screenSize, locale, timezone,
       clickTimestamp, installBeginTimestamp, isInstantApp 
     } = req.body;
 
     const ip = requestIp.getClientIp(req) || '0.0.0.0';
 
-    // 1. Fraud Check (CTIT)
-    let isFraud = false;
-    if (clickTimestamp > 0 && installBeginTimestamp > 0) {
-      const timeDiff = installBeginTimestamp - clickTimestamp;
-      if (timeDiff < 5) {
-        console.log(`🚨 FRAUD: Click Injection detected (${timeDiff}s)`);
-        isFraud = true;
-      }
-    }
-
-    // 2. Save to MongoDB
-    // We use findOneAndUpdate to handle re-sends safely
+    // 1. Save to MongoDB
+    // We store EVERYTHING to build the Identity Graph
     const install = await Install.findOneAndUpdate(
       { installId },
       {
@@ -34,32 +29,35 @@ installRoute.post('/api/install', async (req, res) => {
         ip,
         ua,
         deviceModel,
+        osVersion,
+        screenSize,
+        locale,
+        timezone,
+        gaid,
+        idfv,
+        androidId,
         clickTimestamp,
         installBeginTimestamp,
         isInstantApp,
-        attributionType: isFraud ? 'blocked_fraud' : 'pending'
+        attributionType: 'pending'
       },
       { upsert: true, new: true }
     );
 
-    // 3. Run Matching (Directly, no Redis)
-    if (!isFraud) {
-      // Run in background (don't await) so we reply to app fast
-      matchInstall(installId).catch(err => console.error(err));
-    }
+    // 2. Run Matching Logic
+    // We don't await this so the API responds fast to the app
+    matchInstall(installId).catch(err => console.error(err));
 
-    // 4. Return result to App
-    // If we just ran the match, we might want to wait a split second or just return what we have.
-    // For better UX, let's wait for the match result if it's fast.
-    
-    // Re-fetch to get the result of matchInstall
+    // 3. Return Result
+    // We fetch the updated document to see if the match happened instantly
     const updatedInstall = await Install.findOne({ installId });
 
     res.json({
       success: true,
       found: updatedInstall?.attributedTo && updatedInstall.attributedTo !== 'organic',
       campaign: updatedInstall?.attributedTo,
-      deep_link: "", // You would fetch this from the Click model if needed
+      // You would typically fetch the deep_link from the Click model here if matched
+      deep_link: "", 
       is_reinstall: false
     });
 

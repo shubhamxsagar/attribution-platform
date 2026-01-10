@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { connectDB } from './config/db';
 import { clickRoute } from './routes/click';
 import { installRoute } from './routes/install';
+import { wellKnownRoute } from './routes/wellknown';
 
 dotenv.config();
 
@@ -16,22 +17,9 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // Routes
+app.use(wellKnownRoute);
 app.use(clickRoute);
 app.use(installRoute);
-
-// AASA File (iOS)
-app.get('/.well-known/apple-app-site-association', (req, res) => {
-  res.setHeader('Content-Type', 'application/json');
-  res.json({
-    "applinks": {
-      "apps": [],
-      "details": [{
-          "appID": "YOUR_TEAM_ID.com.creditsea.app",
-          "paths": [ "/r/*" ]
-      }]
-    }
-  });
-});
 
 const PORT = Number(process.env.PORT) || 4000;
 
