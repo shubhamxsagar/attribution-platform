@@ -6,6 +6,7 @@ import { connectDB } from './config/db';
 import { clickRoute } from './routes/click';
 import { installRoute } from './routes/install';
 import { wellKnownRoute } from './routes/wellknown';
+import cookieParser from 'cookie-parser';
 
 dotenv.config();
 
@@ -13,8 +14,12 @@ dotenv.config();
 connectDB();
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: true,
+  credentials: true // Required for cookies to work
+}));
 app.use(bodyParser.json());
+app.use(cookieParser());
 
 // Routes
 app.use(wellKnownRoute);
