@@ -12,55 +12,26 @@ clickRoute.get('/r/:linkName', async (req, res) => {
     const { linkName } = req.params;
     const { campaign, source, source_id, deep_link } = req.query;
     const uaString = req.headers['user-agent'] || '';
+    
+    const uniqueClickId = `${linkName}-${uuidv4().slice(0, 8)}`;
 
-    const inAppRules = ['Instagram', 'FBAN', 'FBAV', 'Twitter', 'LinkedIn', 'Snapchat', 'Line'];
+    const inAppRules = ['Instagram', 'FBAN', 'FBAV', 'Twitter', 'LinkedIn', 'Snapchat'];
     const isInAppBrowser = inAppRules.some(rule => uaString.includes(rule));
 
-    // if (isInAppBrowser) {
-    //   const fullUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}&confirmed=true`;
-
-    //   // SERVE A BEAUTIFUL LANDING PAGE (Like Slice/Firebase)
-    //   const html = `
-    //     <!DOCTYPE html>
-    //     <html>
-    //       <head>
-    //         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    //         <title>CreditSea</title>
-    //         <style>
-    //           body { font-family: -apple-system, sans-serif; text-align: center; padding: 0; margin: 0; background: #fff; }
-    //           .hero { background: #f5f5f7; padding: 60px 20px; }
-    //           .logo { font-size: 40px; margin-bottom: 10px; }
-    //           h1 { margin: 0; font-size: 24px; color: #1d1d1f; }
-    //           p { color: #86868b; font-size: 16px; margin-top: 10px; }
-              
-    //           .btn { 
-    //             background: #007AFF; color: white; padding: 18px 40px; border-radius: 30px; 
-    //             text-decoration: none; font-weight: 600; font-size: 18px; display: inline-block;
-    //             margin-top: 30px; box-shadow: 0 4px 15px rgba(0,122,255,0.4);
-    //           }
-              
-    //           .footer { margin-top: 50px; font-size: 12px; color: #ccc; }
-    //         </style>
-    //       </head>
-    //       <body>
-    //         <div class="hero">
-    //           <div class="logo">🌊</div>
-    //           <h1>CreditSea</h1>
-    //           <p>Instant Personal Loans</p>
-              
-    //           <!-- 
-    //              When they click this, it reloads this same route with &confirmed=true.
-    //              This allows us to capture the IP/Fingerprint right before the App Store.
-    //           -->
-    //           <a href="${fullUrl}" class="btn">Download App</a>
-    //         </div>
-            
-    //         <div class="footer">Secure • Fast • Reliable</div>
-    //       </body>
-    //     </html>
-    //   `;
-    //   return res.send(html);
-    // }
+    if (isInAppBrowser) {
+      const fullUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+      const html = `
+        <html>
+          <head><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+          <body style="text-align:center; padding:40px; font-family:sans-serif;">
+            <h2>Security Check</h2>
+            <p>Please open in Safari/Chrome to continue.</p>
+            <a href="${fullUrl}" target="_blank" style="background:#007AFF;color:white;padding:15px 30px;border-radius:10px;text-decoration:none;display:block;">Open Browser</a>
+          </body>
+        </html>
+      `;
+      return res.send(html);
+    }
 
     if (!req.query.screen_captured) {
       const html = `
@@ -68,9 +39,17 @@ clickRoute.get('/r/:linkName', async (req, res) => {
           <head><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
           <body>
             <script>
+              // 1. Capture Screen
               const w = window.screen.width * window.devicePixelRatio;
               const h = window.screen.height * window.devicePixelRatio;
               const screenRes = Math.round(w) + "x" + Math.round(h);
+              
+              // 2. Copy ID to Clipboard (iOS Hack)
+              // We try to copy "creditsea_ref:UNIQUE_ID"
+              const clickId = "${uniqueClickId}";
+              navigator.clipboard.writeText("creditsea_ref:" + clickId).catch(e => {});
+
+              // 3. Redirect
               const url = new URL(window.location.href);
               url.searchParams.set('screen_captured', 'true');
               url.searchParams.set('ss', screenRes); 
@@ -82,21 +61,9 @@ clickRoute.get('/r/:linkName', async (req, res) => {
       return res.send(html);
     }
 
-    const uniqueClickId = `${linkName}-${uuidv4().slice(0, 8)}`;
-
-    if (campaign || source || source_id) {
-      const cookieData = JSON.stringify({
-        campaign,
-        source,
-        sourceId: source_id,
-        clickId: uniqueClickId
-      });
-
-      res.cookie('attribution_data', cookieData, {
-        maxAge: 1000 * 60 * 60 * 24 * 7,
-        httpOnly: true,
-        secure: true,
-        sameSite: 'none'
+    if (campaign || source) {
+      res.cookie('attribution_data', JSON.stringify({ campaign, source, sourceId: source_id, clickId: uniqueClickId }), {
+        maxAge: 604800000, httpOnly: true, secure: true, sameSite: 'none'
       });
     }
 
@@ -111,36 +78,18 @@ clickRoute.get('/r/:linkName', async (req, res) => {
       source: String(source || ''),
       sourceId: String(source_id || ''),
       deep_link: String(deep_link || ''),
-      ip,
-      ua: uaString,
-      deviceModel: agent.device.family,
-      osVersion,
-      screenSize
+      ip, ua: uaString, deviceModel: agent.device.family, osVersion, screenSize
     });
 
-    console.log(`[CLICK] Generated: ${uniqueClickId}`);
-
     const isIOS = /iPad|iPhone|iPod/.test(uaString) || (uaString.includes("Mac") && "ontouchend" in req);
-    
     if (isIOS) {
       res.redirect("https://apps.apple.com/us/app/creditsea/id6743390338");
-    } 
-    else {
+    } else {
       const pkg = process.env.PACKAGE_NAME || 'com.creditsea.app';
-      let rawReferrer = `click_id=${uniqueClickId}`;
-      if (campaign) rawReferrer += `&campaign=${campaign}`;
-      if (source) rawReferrer += `&source=${source}`;
-      if (source_id) rawReferrer += `&source_id=${source_id}`;
-      if (deep_link) rawReferrer += `&deep_link=${deep_link}`;
-
-      const referrerEncoded = encodeURIComponent(rawReferrer);
-      res.redirect(`https://play.google.com/store/apps/details?id=${pkg}&referrer=${referrerEncoded}`);
+      const rawReferrer = `click_id=${uniqueClickId}&campaign=${campaign}&source=${source}&source_id=${source_id}`;
+      res.redirect(`https://play.google.com/store/apps/details?id=${pkg}&referrer=${encodeURIComponent(rawReferrer)}`);
     }
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("Tracking Error");
-  }
+  } catch (error) { res.status(500).send("Error"); }
 });
 
 clickRoute.get('/sourceTrack', async (req, res) => {
