@@ -10,9 +10,8 @@ export interface IClick extends Document {
   ua: string;
   deviceModel?: string;
   osVersion?: string;
-  screenSize?: string; 
-  locale?: string;     
-  timezone?: string;
+  screenSize?: string;
+  locale?: string;
   gaid?: string;
   idfv?: string;
   createdAt: Date;
@@ -28,16 +27,14 @@ const ClickSchema = new Schema<IClick>({
   ua: { type: String, required: true },
   deviceModel: { type: String },
   osVersion: { type: String },
-  screenSize: { type: String }, 
-  locale: { type: String },     
-  timezone: { type: String },   
+  screenSize: { type: String },
+  locale: { type: String },
   gaid: { type: String },
   idfv: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
 
 ClickSchema.index({ ip: 1, createdAt: -1 });
-ClickSchema.index({ gaid: 1 });
-ClickSchema.index({ idfv: 1 });
+ClickSchema.index({ clickId: 1 });
 
 export const Click = mongoose.model<IClick>('Click', ClickSchema);

@@ -10,12 +10,11 @@ export interface IInstall extends Document {
   deviceModel?: string;
   osVersion?: string;
   screenSize?: string;
-  locale?: string;    
-  timezone?: string;  
   referrer?: string;
+  clipboard?: string;
   clickTimestamp?: number;
   installBeginTimestamp?: number;
-  isInstantApp?: boolean; 
+  isInstantApp?: boolean;
   attributedTo: string;
   sourceId: string;
   attributionType: string;
@@ -24,7 +23,6 @@ export interface IInstall extends Document {
 
 const InstallSchema = new Schema<IInstall>({
   installId: { type: String, required: true, unique: true },
-  
   gaid: { type: String },
   idfv: { type: String },
   androidId: { type: String },
@@ -33,9 +31,8 @@ const InstallSchema = new Schema<IInstall>({
   deviceModel: { type: String },
   osVersion: { type: String },
   screenSize: { type: String },
-  locale: { type: String },    
-  timezone: { type: String },  
   referrer: { type: String },
+  clipboard: { type: String },
   clickTimestamp: { type: Number },
   installBeginTimestamp: { type: Number },
   isInstantApp: { type: Boolean, default: false },
