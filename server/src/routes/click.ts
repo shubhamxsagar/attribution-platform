@@ -13,81 +13,55 @@ clickRoute.get('/r/:linkName', async (req, res) => {
     const { campaign, source, source_id, deep_link } = req.query;
     const uaString = req.headers['user-agent'] || '';
 
-    // ============================================================
-    // 1. DETECT IN-APP BROWSERS
-    // ============================================================
     const inAppRules = ['Instagram', 'FBAN', 'FBAV', 'Twitter', 'LinkedIn', 'Snapchat', 'Line'];
     const isInAppBrowser = inAppRules.some(rule => uaString.includes(rule));
 
-    if (isInAppBrowser) {
-      const fullUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
-      
-      // Chrome Scheme (Forces Chrome on iOS if installed)
-      const chromeUrl = fullUrl.replace("https://", "googlechrome://").replace("http://", "googlechrome://");
+    // if (isInAppBrowser) {
+    //   const fullUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}&confirmed=true`;
 
-      const html = `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <!-- Smart App Banner: Shows native UI, but we want them to click OUR button for cookies -->
-            <meta name="apple-itunes-app" content="app-id=6743390338">
-            <title>Open in Browser</title>
-            <style>
-              body { font-family: -apple-system, sans-serif; text-align: center; padding: 20px; background: #fff; color: #333; }
-              .container { max-width: 400px; margin: 0 auto; margin-top: 50px; }
-              h2 { font-size: 22px; margin-bottom: 10px; }
-              p { color: #666; font-size: 16px; line-height: 1.5; margin-bottom: 30px; }
+    //   // SERVE A BEAUTIFUL LANDING PAGE (Like Slice/Firebase)
+    //   const html = `
+    //     <!DOCTYPE html>
+    //     <html>
+    //       <head>
+    //         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    //         <title>CreditSea</title>
+    //         <style>
+    //           body { font-family: -apple-system, sans-serif; text-align: center; padding: 0; margin: 0; background: #fff; }
+    //           .hero { background: #f5f5f7; padding: 60px 20px; }
+    //           .logo { font-size: 40px; margin-bottom: 10px; }
+    //           h1 { margin: 0; font-size: 24px; color: #1d1d1f; }
+    //           p { color: #86868b; font-size: 16px; margin-top: 10px; }
               
-              .btn { 
-                display: block; width: 100%; padding: 16px 0; margin-bottom: 15px;
-                border-radius: 12px; font-size: 17px; font-weight: 600; text-decoration: none;
-                transition: opacity 0.2s;
-              }
-              .btn-primary { background-color: #007AFF; color: white; }
-              .btn-secondary { background-color: #F2F2F7; color: #007AFF; }
-              .btn:active { opacity: 0.8; }
+    //           .btn { 
+    //             background: #007AFF; color: white; padding: 18px 40px; border-radius: 30px; 
+    //             text-decoration: none; font-weight: 600; font-size: 18px; display: inline-block;
+    //             margin-top: 30px; box-shadow: 0 4px 15px rgba(0,122,255,0.4);
+    //           }
+              
+    //           .footer { margin-top: 50px; font-size: 12px; color: #ccc; }
+    //         </style>
+    //       </head>
+    //       <body>
+    //         <div class="hero">
+    //           <div class="logo">🌊</div>
+    //           <h1>CreditSea</h1>
+    //           <p>Instant Personal Loans</p>
+              
+    //           <!-- 
+    //              When they click this, it reloads this same route with &confirmed=true.
+    //              This allows us to capture the IP/Fingerprint right before the App Store.
+    //           -->
+    //           <a href="${fullUrl}" class="btn">Download App</a>
+    //         </div>
+            
+    //         <div class="footer">Secure • Fast • Reliable</div>
+    //       </body>
+    //     </html>
+    //   `;
+    //   return res.send(html);
+    // }
 
-              .instructions { 
-                margin-top: 40px; padding: 20px; background: #F9F9F9; border-radius: 16px; text-align: left; 
-              }
-              .step { display: flex; align-items: center; margin-bottom: 15px; font-size: 15px; }
-              .icon { font-size: 20px; margin-right: 15px; width: 30px; text-align: center; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <h2>Security Check</h2>
-              <p>This app's browser does not support secure tracking. Please open in Safari or Chrome to continue.</p>
-
-              <!-- 1. Try to open in Default Browser (Safari) -->
-              <!-- target="_blank" is the standard way to ask IABs to open external -->
-              <a href="${fullUrl}" target="_blank" class="btn btn-primary">Open System Browser</a>
-
-              <!-- 2. Force Chrome (If they have it) -->
-              <a href="${chromeUrl}" class="btn btn-secondary">Open in Chrome</a>
-
-              <div class="instructions">
-                <div style="font-weight:600; margin-bottom:15px;">If buttons don't work:</div>
-                <div class="step">
-                  <span class="icon">1️⃣</span>
-                  <span>Tap the <strong>•••</strong> or <strong>Share</strong> icon</span>
-                </div>
-                <div class="step">
-                  <span class="icon">2️⃣</span>
-                  <span>Select <strong>Open in Browser</strong></span>
-                </div>
-              </div>
-            </div>
-          </body>
-        </html>
-      `;
-      return res.send(html);
-    }
-
-    // ============================================================
-    // 2. SCREEN CAPTURE (Deepview)
-    // ============================================================
     if (!req.query.screen_captured) {
       const html = `
         <html>
@@ -108,9 +82,6 @@ clickRoute.get('/r/:linkName', async (req, res) => {
       return res.send(html);
     }
 
-    // ============================================================
-    // 3. GENERATE UNIQUE ID & COOKIE
-    // ============================================================
     const uniqueClickId = `${linkName}-${uuidv4().slice(0, 8)}`;
 
     if (campaign || source || source_id) {
@@ -129,9 +100,6 @@ clickRoute.get('/r/:linkName', async (req, res) => {
       });
     }
 
-    // ============================================================
-    // 4. SAVE TO DB
-    // ============================================================
     const screenSize = req.query.ss as string || '';
     const ip = requestIp.getClientIp(req) || '0.0.0.0';
     const agent = useragent.parse(uaString);
@@ -152,9 +120,6 @@ clickRoute.get('/r/:linkName', async (req, res) => {
 
     console.log(`[CLICK] Generated: ${uniqueClickId}`);
 
-    // ============================================================
-    // 5. REDIRECT
-    // ============================================================
     const isIOS = /iPad|iPhone|iPod/.test(uaString) || (uaString.includes("Mac") && "ontouchend" in req);
     
     if (isIOS) {
@@ -186,7 +151,6 @@ clickRoute.get('/sourceTrack', async (req, res) => {
     console.log(`🔍 Source Track Hit | User: ${userId}`);
 
     if (cookieRaw) {
-      // --- SCENARIO A: COOKIE FOUND ---
       try {
         const data = JSON.parse(cookieRaw);
         console.log(`✅ ATTRIBUTION SUCCESS: User ${userId} came from Campaign: ${data.campaign}, Source: ${data.source}, Source ID: ${data.sourceId}`);
